@@ -7,6 +7,8 @@ from tqdm import tqdm
 import onnxruntime
 import numpy as np
 from itertools import repeat
+import pandas as pd
+import os
 
 try:
     from collections.abc import Sequence
@@ -81,7 +83,11 @@ def create_individual(lower_limits, upper_limits):
     room_num_ns = random.randint(lower_limits[3], upper_limits[3])
 
     build_level_num = random.randint(lower_limits[4], upper_limits[4])
-    build_level_height = random.uniform(lower_limits[5], upper_limits[5])
+
+    if lower_limits[5]!= upper_limits[5]:
+        build_level_height = random.uniform(lower_limits[5], upper_limits[5])
+    else:
+        build_level_height = lower_limits[5]
 
     wumian_chuanre = random.uniform(lower_limits[6], upper_limits[6])
     waiqiang_chuanre = random.uniform(lower_limits[7], upper_limits[7])
@@ -142,8 +148,10 @@ def is_valid(individual,plat,thre_list,thre_area):
 
     if plat == 0:
         area = (room_len_ew * room_len_ns * room_num_ew * 2 + room_len_ew * room_num_ew * 2) * build_level_num
+        # pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][1] * 2) * thre_list[4][1]
     else:
         area = ((room_len_ew * room_len_ns * room_num_ew *(room_num_ns+2)) * build_level_num)-((room_len_ew*(room_num_ew-2)-4) * (room_len_ns*room_num_ns-4)*(build_level_num-1))
+        # pos_max_area = ((thre_list[0][1] * thre_list[1][1] * thre_list[2][1] *(thre_list[3][1]+2)) * thre_list[4][1])-((thre_list[0][1]*(thre_list[2][1]-2)-4) * (thre_list[1][1]*thre_list[3][1]-4)*(thre_list[4][1]-1))
 
     if area > thre_area:
         return False
@@ -183,43 +191,81 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
 
     toolbox.register("evaluate", evaluate,sess=sess)
     if plat == 0:
-        neilang_threshhold_list = [[6, 10], [6, 10],
-                                   [4, thre_room_num_ew], [0, 0],
-                                   [3, thre_build_level_num], [3.3, thre_build_level_height],
-                                   [0.087063, 0.207499], [0.112422, 0.17051],
-                                   [0, 11],
-                                   [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
-                                   [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
-                                   [0, 0], [0, 0], [0, 0], [0, 0],
-                                   [0, 0], [0, 0], [0, 0], [0, 0],
-                                   [0, 0],
-                                   [0, 0]]
+        thre_list = [[6, 10], [6, 10],
+                     [4, 12], [0, 0],
+                     [3, 6], [3.3, 4.2],
+                     [0.087063, 0.207499], [0.112422, 0.17051],
+                     [0, 11],
+                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
+                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
+                     [0, 0], [0, 0], [0, 0], [0, 0],
+                     [0, 0], [0, 0], [0, 0], [0, 0],
+                     [0, 0],
+                     [0, 0]]
+        if thre_room_num_ew != -1:
+            thre_list[2][0] = thre_room_num_ew
+            thre_list[2][1] = thre_room_num_ew
 
-        lower_limits = [neilang_threshhold_list[i][0] for i in range(len(neilang_threshhold_list))]
-        upper_limits = [neilang_threshhold_list[i][1] for i in range(len(neilang_threshhold_list))]
+        if thre_build_level_num != -1:
+            thre_list[4][0] = thre_build_level_num
+            thre_list[4][1] = thre_build_level_num
+
+        if thre_build_level_height != -1:
+            thre_list[5][0] = thre_build_level_height
+            thre_list[5][1] = thre_build_level_height
+
+        lower_limits = [thre_list[i][0] for i in range(len(thre_list))]
+        upper_limits = [thre_list[i][1] for i in range(len(thre_list))]
+        # calculate max thresh are
+        pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][
+            1] * 2) * thre_list[4][1]
+        if pos_max_area < thre_area:
+            thre_area = pos_max_area
 
         toolbox.register("create_individual", create_individual, lower_limits=lower_limits,upper_limits=upper_limits)
-        toolbox.register("is_valid", is_valid,plat=0,thre_list = neilang_threshhold_list,thre_area = thre_area)
+        toolbox.register("is_valid", is_valid,plat=0,thre_list = thre_list,thre_area = thre_area)
 
 
     else:
-        zhongting_threshhold_list = [[6, 10], [6, 10],
-                                     [4, thre_room_num_ew], [1, thre_room_num_ns],
-                                     [3, thre_build_level_num], [3.3, thre_build_level_height],
-                                     [0.087063, 0.207499], [0.112422, 0.17051],
-                                     [0, 11],
-                                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
-                                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
-                                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
-                                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
-                                     [0.2, 0.9],
-                                     [1, 1]]
+        thre_list = [[6, 10], [6, 10],
+                     [4, 12], [1, 4],
+                     [3, 6], [3.3, 4.2],
+                     [0.087063, 0.207499], [0.112422, 0.17051],
+                     [0, 11],
+                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
+                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
+                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
+                     [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
+                     [0.2, 0.9],
+                     [1, 1]]
 
-        lower_limits = [zhongting_threshhold_list[i][0] for i in range(len(zhongting_threshhold_list))]
-        upper_limits = [zhongting_threshhold_list[i][1] for i in range(len(zhongting_threshhold_list))]
+        if thre_room_num_ew != -1:
+            thre_list[2][0] = thre_room_num_ew
+            thre_list[2][1] = thre_room_num_ew
+
+        if thre_room_num_ns != -1:
+            thre_list[3][0] = thre_room_num_ns
+            thre_list[3][1] = thre_room_num_ns
+
+        if thre_build_level_num != -1:
+            thre_list[4][0] = thre_build_level_num
+            thre_list[4][1] = thre_build_level_num
+
+        if thre_build_level_height != -1:
+            thre_list[5][0] = thre_build_level_height
+            thre_list[5][1] = thre_build_level_height
+
+        lower_limits = [thre_list[i][0] for i in range(len(thre_list))]
+        upper_limits = [thre_list[i][1] for i in range(len(thre_list))]
+
+        # calculate max thresh are
+        pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][
+            1] * 2) * thre_list[4][1]
+        if pos_max_area < thre_area:
+            thre_area = pos_max_area
 
         toolbox.register("create_individual", create_individual,lower_limits=lower_limits,upper_limits=upper_limits)
-        toolbox.register("is_valid", is_valid,plat=1,thre_list = zhongting_threshhold_list, thre_area=thre_area)
+        toolbox.register("is_valid", is_valid,plat=1,thre_list = thre_list, thre_area=thre_area)
 
     toolbox.decorate("evaluate", tools.DeltaPenalty(toolbox.is_valid, delta=[9999, -9999, 9999]))
     # toolbox.register("evaluate", evaluate)
@@ -246,10 +292,32 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
 
         pop = toolbox.select(comb_pop, k=pop_size)
 
-    top1 = tools.selBest(pop,1)
+    top1 = tools.selBest(pop,20)
     print("Best individual:", top1[0], "Fitness:", top1[0].fitness.values)
 
-    return pop
+    return pop,top1
+
+
+def write_result(pop,output_name):
+    key_names = ['房间东西向长度', '房间南北向长度', '建筑东西向房间数', '建筑南北向房间数', '建筑层数', '建筑层高', '屋面传热系数', '外墙传热系数', '外窗类型编号', '南向窗墙比', '南向窗宽',
+     '南向窗高', '南向窗台高', '北向窗墙比', '北向窗宽', '北向窗高', '北向窗台高', '东向窗墙比', '东向窗宽', '东向窗高', '东向窗台高', '西向窗墙比', '西向窗宽', '西向窗高',
+     '西向窗台高', '中庭天窗比', '平面形式', '单位面积总能耗', '舒适时间占全年时间百分比', '一次性投入成本']
+
+    df_dict = {i:[] for i in key_names}
+    for bs in range(len(pop)):
+        for ele in range(len(pop[bs])):
+            df_dict[key_names[ele]].append(pop[bs][ele])
+
+        df_dict['单位面积总能耗'].append(pop[bs].fitness.values[0])
+        df_dict['舒适时间占全年时间百分比'].append(pop[bs].fitness.values[1])
+        df_dict['一次性投入成本'].append(pop[bs].fitness.values[2])
+
+
+    df=pd.DataFrame(df_dict)
+
+    df.to_excel(f'{output_name}.xlsx')
+
+
 
 
 if __name__ == "__main__":
@@ -260,17 +328,20 @@ if __name__ == "__main__":
     muteProb = 0.2   #变异概率
     plat = 1         # 0 -> 内廊 ，1 ->中庭
     thre_area = 20000               # 最大面积约束
-    thre_room_num_ew = 12           # 最大东西房间数约束
-    thre_room_num_ns = 4            # 最大南北房间数约束   （内廊可忽略强制为0）
-    thre_build_level_num = 6        # 最大层数约束
-    thre_build_level_height = 4.2   # 最大层高约束
+    thre_room_num_ew = 12           # 东西房间数约束
+    thre_room_num_ns = 4            # 南北房间数约束   （内廊可忽略强制为0）
+    thre_build_level_num = 6        # 层数约束
+    thre_build_level_height = 4.2   # 层高约束
 
-    run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = '../final.onnx', cxProb = 0.8,
+    final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = 0.8,
                                                                 muteProb=0.2,
-                                                                plat = 0,
+                                                                plat = 1,
                                                                 thre_area = 20000,
                                                                 thre_room_num_ew = 12,
                                                                 thre_room_num_ns = 4,
                                                                 thre_build_level_num = 6,
                                                                 thre_build_level_height=4.2)
 
+
+    write_result(final_pop,'final_pop')
+    write_result(top1, 'top1')

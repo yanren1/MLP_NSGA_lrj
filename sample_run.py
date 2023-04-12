@@ -7,7 +7,7 @@ from utils.valing_pytorch import pytorch_val
 def sample_val(onnx = 1):
     if onnx:
         onnx_val(onnx_pth = 'final.onnx',   #模型位置
-                 data_dir='../data',        #数据位置
+                 data_dir='data',        #数据位置
                  output_name = 'result')    #输出excel名字 （无需加拓展名）
     else:
         pytorch_val(model_pth='final.pt',  #模型位置
@@ -39,12 +39,12 @@ def sample_mlp_nsga():
     muteProb = 0.2  # 变异概率
     plat = 1  # 0 -> 内廊 ，1 ->中庭
     thre_area = 20000  # 最大面积约束
-    thre_room_num_ew = 12  # 最大东西房间数约束
-    thre_room_num_ns = 4  # 最大南北房间数约束   （内廊可忽略强制为0）
-    thre_build_level_num = 6  # 最大层数约束
-    thre_build_level_height = 4.2  # 最大层高约束
+    thre_room_num_ew = 12  # 东西房间数约束
+    thre_room_num_ns = 4  # 南北房间数约束   （内廊可忽略强制为0）
+    thre_build_level_num = 6  # 层数约束
+    thre_build_level_height = 4.2  # 层高约束
 
-    final_pop = run_mlp_nsga(pop_size=pop_size,
+    final_pop,top1 = run_mlp_nsga(pop_size=pop_size,
                              NGEN=NGEN,
                              onnx_pth='final.onnx',
                              cxProb=cxProb,
@@ -56,6 +56,9 @@ def sample_mlp_nsga():
                              thre_build_level_num=thre_build_level_num,
                              thre_build_level_height=thre_build_level_height)
 
+
+    write_result(final_pop,'final_pop')
+    write_result(top1, 'top1')
 
 
 
