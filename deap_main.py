@@ -219,7 +219,13 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         # calculate max thresh are
         pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][
             1] * 2) * thre_list[4][1]
-        if pos_max_area < thre_area:
+        pos_min_area = (thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * 2 + thre_list[0][1] * thre_list[2][
+            0] * 2) * thre_list[4][0]
+
+        if thre_area < pos_min_area:
+            thre_area = pos_min_area
+
+        elif pos_max_area < thre_area:
             thre_area = pos_max_area
 
         toolbox.register("create_individual", create_individual, lower_limits=lower_limits,upper_limits=upper_limits)
@@ -261,7 +267,13 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         # calculate max thresh are
         pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][
             1] * 2) * thre_list[4][1]
-        if pos_max_area < thre_area:
+        pos_min_area = (thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * 2 + thre_list[0][0] * thre_list[2][
+            0] * 2) * thre_list[4][0]
+
+        if thre_area < pos_min_area:
+            thre_area = pos_min_area
+
+        elif pos_max_area < thre_area:
             thre_area = pos_max_area
 
         toolbox.register("create_individual", create_individual,lower_limits=lower_limits,upper_limits=upper_limits)
