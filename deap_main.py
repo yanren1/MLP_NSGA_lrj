@@ -224,9 +224,14 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
 
         if thre_area < pos_min_area:
             thre_area = pos_min_area
+            print('Your thre_area is smaller than pos_min_area!!')
 
         elif pos_max_area < thre_area:
             thre_area = pos_max_area
+            print('Your thre_area is larger than pos_max_area!!')
+
+        print(f'Final thre_area = {thre_area}')
+        print()
 
         toolbox.register("create_individual", create_individual, lower_limits=lower_limits,upper_limits=upper_limits)
         toolbox.register("is_valid", is_valid,plat=0,thre_list = thre_list,thre_area = thre_area)
@@ -272,9 +277,14 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
 
         if thre_area < pos_min_area:
             thre_area = pos_min_area
+            print('Your thre_area is smaller than pos_min_area!!')
 
         elif pos_max_area < thre_area:
             thre_area = pos_max_area
+            print('Your thre_area is larger than pos_max_area!!')
+
+        print(f'Final thre_area = {thre_area}')
+        print()
 
         toolbox.register("create_individual", create_individual,lower_limits=lower_limits,upper_limits=upper_limits)
         toolbox.register("is_valid", is_valid,plat=1,thre_list = thre_list, thre_area=thre_area)
