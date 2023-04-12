@@ -3,7 +3,6 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-
 class SampleDataset(Dataset):
     def __init__(self, root_dir, ):
         super(SampleDataset, self).__init__()
@@ -21,7 +20,7 @@ class SampleDataset(Dataset):
         return len(self.samples)
 
     def __read_xlsx(self):
-        f_pth = os.path.join('data', 'data.xlsx')
+        f_pth = os.path.join(self.root_dir, 'data.xlsx')
         # f_pth = os.path.join(root_dir, 'data.xlsx')
         df = pd.read_excel(f_pth,)
 
