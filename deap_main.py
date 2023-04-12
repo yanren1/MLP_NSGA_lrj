@@ -270,10 +270,11 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         upper_limits = [thre_list[i][1] for i in range(len(thre_list))]
 
         # calculate max thresh are
-        pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][
-            1] * 2) * thre_list[4][1]
-        pos_min_area = (thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * 2 + thre_list[0][0] * thre_list[2][
-            0] * 2) * thre_list[4][0]
+        pos_max_area = ((thre_list[0][1] * thre_list[1][1] * thre_list[2][0] * (thre_list[3][1] + 2)) * thre_list[4][1]) - (
+                    (thre_list[0][1] * (thre_list[2][1] - 2) - 4) * (thre_list[1][1] * thre_list[3][1] - 4) * (thre_list[4][1] - 1))
+
+        pos_min_area = ((thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * (thre_list[3][0] + 2)) * thre_list[4][0]) - (
+                    (thre_list[0][0] * (thre_list[2][0] - 2) - 4) * (thre_list[1][0] * thre_list[3][0] - 4) * (thre_list[4][0] - 1))
 
         if thre_area < pos_min_area:
             thre_area = pos_min_area
@@ -323,7 +324,7 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
 def write_result(pop,output_name):
     key_names = ['房间东西向长度', '房间南北向长度', '建筑东西向房间数', '建筑南北向房间数', '建筑层数', '建筑层高', '屋面传热系数', '外墙传热系数', '外窗类型编号', '南向窗墙比', '南向窗宽',
      '南向窗高', '南向窗台高', '北向窗墙比', '北向窗宽', '北向窗高', '北向窗台高', '东向窗墙比', '东向窗宽', '东向窗高', '东向窗台高', '西向窗墙比', '西向窗宽', '西向窗高',
-     '西向窗台高', '中庭天窗比', '平面形式', '单位面积总能耗', '舒适时间占全年时间百分比', '一次性投入成本']
+     '西向窗台高', '中庭天窗比', '平面形式', '单位面积总能耗', '舒适时间占全年时间百分比', '一次性投入成本','最终面积']
 
     df_dict = {i:[] for i in key_names}
     for bs in range(len(pop)):
@@ -334,6 +335,14 @@ def write_result(pop,output_name):
         df_dict['舒适时间占全年时间百分比'].append(pop[bs].fitness.values[1])
         df_dict['一次性投入成本'].append(pop[bs].fitness.values[2])
 
+    for i in range(len(pop)):
+        if df_dict['平面形式'][i] == 0:
+            area = (df_dict[key_names[0]][i] * df_dict[key_names[1]][i]* df_dict[key_names[2]][i] * 2 + df_dict[key_names[0]][i] * df_dict[key_names[2]][
+                i] * 2) * df_dict[key_names[4]][i]
+        else:
+            area = ((df_dict[key_names[0]][i] * df_dict[key_names[1]][i] * df_dict[key_names[2]][i] * (df_dict[key_names[3]][i] + 2)) * df_dict[key_names[4]][i]) - (
+                    (df_dict[key_names[0]][i] * (df_dict[key_names[2]][i] - 2) - 4) * (df_dict[key_names[1]][i] * df_dict[key_names[3]][i] - 4) * (df_dict[key_names[4]][i] - 1))
+        df_dict['最终面积'].append(area)
 
     df=pd.DataFrame(df_dict)
 
@@ -344,20 +353,20 @@ def write_result(pop,output_name):
 
 if __name__ == "__main__":
 
-    pop_size = 200   #初始种群数
+    pop_size = 500   #初始种群数
     NGEN = 200       #迭代次数
     cxProb = 0.8     #交叉概率
     muteProb = 0.2   #变异概率
     plat = 1         # 0 -> 内廊 ，1 ->中庭
     thre_area = 20000               # 最大面积约束
-    thre_room_num_ew = 12           # 东西房间数约束
-    thre_room_num_ns = 4            # 南北房间数约束   （内廊可忽略强制为0）
-    thre_build_level_num = 6        # 层数约束
-    thre_build_level_height = 4.2   # 层高约束
+    thre_room_num_ew = -1           # 东西房间数约束
+    thre_room_num_ns = -1            # 南北房间数约束   （内廊可忽略强制为0）
+    thre_build_level_num = -1        # 层数约束
+    thre_build_level_height = -1   # 层高约束
 
     final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = 0.8,
                                                                 muteProb=0.2,
-                                                                plat = 1,
+                                                                plat = 0,
                                                                 thre_area = 20000,
                                                                 thre_room_num_ew = 12,
                                                                 thre_room_num_ns = 4,
