@@ -380,7 +380,7 @@ if __name__ == "__main__":
     cxProb = 0.8     #交叉概率
     muteProb = 0.2   #变异概率
     plat = 0         # 0 -> 内廊 ，1 ->中庭
-    thre_area = -20               # 最大面积约束
+    thre_area = -1               # 最大面积约束
     thre_room_num_ew = -1           # 东西房间数约束
     thre_room_num_ns = -1            # 南北房间数约束   （内廊可忽略强制为0）
     thre_build_level_num = -1        # 层数约束
