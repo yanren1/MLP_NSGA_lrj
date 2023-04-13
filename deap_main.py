@@ -219,12 +219,17 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         # calculate max thresh are
         pos_max_area = (thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * 2 + thre_list[0][1] * thre_list[2][
             1] * 2) * thre_list[4][1]
-        pos_min_area = (thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * 2 + thre_list[0][1] * thre_list[2][
+        pos_min_area = (thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * 2 + thre_list[0][0] * thre_list[2][
             0] * 2) * thre_list[4][0]
 
-        if thre_area < pos_min_area:
+        if  thre_area == -1:
+            thre_area = pos_max_area
+            print('Set as Default pos_max_area!')
+
+        elif thre_area <= pos_min_area:
             thre_area = pos_min_area
             print('Your thre_area is smaller than pos_min_area!!')
+            print('Now you will only get min area setup!!')
 
         elif pos_max_area < thre_area:
             thre_area = pos_max_area
@@ -233,7 +238,13 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         print(f'Final thre_area = {thre_area}')
         print()
 
-        toolbox.register("create_individual", create_individual, lower_limits=lower_limits,upper_limits=upper_limits)
+        if thre_area == pos_min_area:
+            toolbox.register("create_individual", create_individual, lower_limits=lower_limits,
+                             upper_limits=lower_limits)
+        else:
+            toolbox.register("create_individual", create_individual,lower_limits=lower_limits,
+                             upper_limits=upper_limits)
+
         toolbox.register("is_valid", is_valid,plat=0,thre_list = thre_list,thre_area = thre_area)
 
 
@@ -270,15 +281,20 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         upper_limits = [thre_list[i][1] for i in range(len(thre_list))]
 
         # calculate max thresh are
-        pos_max_area = ((thre_list[0][1] * thre_list[1][1] * thre_list[2][0] * (thre_list[3][1] + 2)) * thre_list[4][1]) - (
+        pos_max_area = ((thre_list[0][1] * thre_list[1][1] * thre_list[2][1] * (thre_list[3][1] + 2)) * thre_list[4][1]) - (
                     (thre_list[0][1] * (thre_list[2][1] - 2) - 4) * (thre_list[1][1] * thre_list[3][1] - 4) * (thre_list[4][1] - 1))
 
         pos_min_area = ((thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * (thre_list[3][0] + 2)) * thre_list[4][0]) - (
                     (thre_list[0][0] * (thre_list[2][0] - 2) - 4) * (thre_list[1][0] * thre_list[3][0] - 4) * (thre_list[4][0] - 1))
 
-        if thre_area < pos_min_area:
+        if  thre_area == -1:
+            thre_area = pos_max_area
+            print('Set as Default pos_max_area!')
+
+        elif thre_area <= pos_min_area:
             thre_area = pos_min_area
             print('Your thre_area is smaller than pos_min_area!!')
+            print('Now you will only get min area setup!!')
 
         elif pos_max_area < thre_area:
             thre_area = pos_max_area
@@ -287,7 +303,13 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         print(f'Final thre_area = {thre_area}')
         print()
 
-        toolbox.register("create_individual", create_individual,lower_limits=lower_limits,upper_limits=upper_limits)
+        if thre_area == pos_min_area:
+            toolbox.register("create_individual", create_individual, lower_limits=lower_limits,
+                             upper_limits=lower_limits)
+        else:
+            toolbox.register("create_individual", create_individual,lower_limits=lower_limits,
+                             upper_limits=upper_limits)
+
         toolbox.register("is_valid", is_valid,plat=1,thre_list = thre_list, thre_area=thre_area)
 
     toolbox.decorate("evaluate", tools.DeltaPenalty(toolbox.is_valid, delta=[9999, -9999, 9999]))
@@ -353,25 +375,25 @@ def write_result(pop,output_name):
 
 if __name__ == "__main__":
 
-    pop_size = 500   #初始种群数
+    pop_size = 200   #初始种群数
     NGEN = 200       #迭代次数
     cxProb = 0.8     #交叉概率
     muteProb = 0.2   #变异概率
-    plat = 1         # 0 -> 内廊 ，1 ->中庭
-    thre_area = 20000               # 最大面积约束
+    plat = 0         # 0 -> 内廊 ，1 ->中庭
+    thre_area = -20               # 最大面积约束
     thre_room_num_ew = -1           # 东西房间数约束
     thre_room_num_ns = -1            # 南北房间数约束   （内廊可忽略强制为0）
     thre_build_level_num = -1        # 层数约束
     thre_build_level_height = -1   # 层高约束
 
-    final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = 0.8,
-                                                                muteProb=0.2,
-                                                                plat = 0,
-                                                                thre_area = 20000,
-                                                                thre_room_num_ew = 12,
-                                                                thre_room_num_ns = 4,
-                                                                thre_build_level_num = 6,
-                                                                thre_build_level_height=4.2)
+    final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = cxProb,
+                                                                muteProb=muteProb,
+                                                                plat = plat,
+                                                                thre_area = thre_area,
+                                                                thre_room_num_ew = thre_room_num_ew,
+                                                                thre_room_num_ns = thre_room_num_ns,
+                                                                thre_build_level_num = thre_build_level_num,
+                                                                thre_build_level_height=thre_build_level_height)
 
 
     write_result(final_pop,'final_pop')
