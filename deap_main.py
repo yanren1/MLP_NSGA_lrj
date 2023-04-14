@@ -394,7 +394,7 @@ if __name__ == "__main__":
     thre_room_num_ns = -1            # 南北房间数约束   （内廊可忽略强制为0）
     thre_build_level_num = -1        # 层数约束
     thre_build_level_height = -1   # 层高约束
-    pred_thresh = [23,0.89,140]
+    pred_thresh = [23,0.89,140]    #最小能耗、最大百分比、最小成本
     final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = cxProb,
                                                                 muteProb=muteProb,
                                                                 plat = plat,
@@ -402,7 +402,8 @@ if __name__ == "__main__":
                                                                 thre_room_num_ew = thre_room_num_ew,
                                                                 thre_room_num_ns = thre_room_num_ns,
                                                                 thre_build_level_num = thre_build_level_num,
-                                                                thre_build_level_height=thre_build_level_height)
+                                                                thre_build_level_height=thre_build_level_height,
+                                                                pred_thresh = [23,0.89,140])
 
 
     write_result(final_pop,'final_pop')
