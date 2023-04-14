@@ -159,14 +159,23 @@ def is_valid(individual,plat,thre_list,thre_area):
     return True
 
 # 三个目 单位面积总能耗（min）、舒适时间占全年时间百分比（max）、单位面积增量成本（min）
-def evaluate(individual,sess):
+def evaluate(individual,sess,pred_thresh):
+
+    bad_result =[9999, -9999, 9999]
 
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
 
     input_tensor = np.array(individual).reshape([1,27])
     pred = sess.run([label_name], {input_name: input_tensor.astype(np.float32)})[0]
-    # print(pred[0][0],pred[0][1],pred[0][2])
+
+    if pred[0][0] < pred_thresh[0]:
+        return bad_result
+    if pred[0][1] > pred_thresh[1]:
+        return bad_result
+    if pred[0][2] < pred_thresh[2]:
+        return bad_result
+
     return pred[0][0],pred[0][1],pred[0][2]
 
 # 约束条件
@@ -180,7 +189,8 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
                                                 thre_room_num_ew = 12,
                                                 thre_room_num_ns = 4,
                                                 thre_build_level_num = 6,
-                                                thre_build_level_height=4.2):
+                                                thre_build_level_height=4.2,
+                                                pred_thresh = [23,0.89,140]):
     # 加载 ONNX
     sess = onnxruntime.InferenceSession(onnx_pth)
 
@@ -188,8 +198,7 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
     # 问题定义
     creator.create("FitnessMulti", base.Fitness, weights=(-1.0, 1.0, -1.0))
     creator.create("Individual", list, fitness=creator.FitnessMulti)
-
-    toolbox.register("evaluate", evaluate,sess=sess)
+    toolbox.register("evaluate", evaluate,sess=sess,pred_thresh = pred_thresh)
     if plat == 0:
         thre_list = [[6, 10], [6, 10],
                      [4, 12], [0, 0],
@@ -330,8 +339,8 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
     for _ in tqdm(range(NGEN)):
         offspring = algorithms.varAnd(pop, toolbox, cxpb=cxProb, mutpb=muteProb)
         comb_pop = pop + offspring
-
         fits = toolbox.map(toolbox.evaluate, comb_pop)
+
         for fit, ind in zip(fits, comb_pop):
             ind.fitness.values = fit
 
@@ -375,17 +384,17 @@ def write_result(pop,output_name):
 
 if __name__ == "__main__":
 
-    pop_size = 200   #初始种群数
+    pop_size = 300   #初始种群数
     NGEN = 200       #迭代次数
     cxProb = 0.8     #交叉概率
     muteProb = 0.2   #变异概率
-    plat = 0         # 0 -> 内廊 ，1 ->中庭
+    plat = 1         # 0 -> 内廊 ，1 ->中庭
     thre_area = -1               # 最大面积约束
-    thre_room_num_ew = -1           # 东西房间数约束
+    thre_room_num_ew = 2           # 东西房间数约束
     thre_room_num_ns = -1            # 南北房间数约束   （内廊可忽略强制为0）
     thre_build_level_num = -1        # 层数约束
     thre_build_level_height = -1   # 层高约束
-
+    pred_thresh = [23,0.89,140]
     final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = cxProb,
                                                                 muteProb=muteProb,
                                                                 plat = plat,
@@ -397,4 +406,4 @@ if __name__ == "__main__":
 
 
     write_result(final_pop,'final_pop')
-    write_result(top1, 'top1')
+    # write_result(top1, 'top1')

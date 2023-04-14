@@ -27,8 +27,9 @@ def train():
     #seperate train and val set
 
     debug = True
+    use_pretrain = False
 
-    train_ratio = 0.95
+    train_ratio = 0.8
     dataset = SampleDataset(root_dir = 'data')
     train_size = int(train_ratio * len(dataset))
     val_size = len(dataset) - train_size
@@ -54,21 +55,23 @@ def train():
                                 # norm_layer=nn.LayerNorm,
                                 dropout= 0,inplace=False).cuda()
     # try read pre-train model
-    weights_pth = 'final.pt'
-    try:
-        backbone.load_state_dict(torch.load(weights_pth))
-    except:
-        print(f'No {weights_pth}')
+    if use_pretrain:
+        weights_pth = 'final.pt'
+        try:
+            backbone.load_state_dict(torch.load(weights_pth))
+        except:
+            print(f'No {weights_pth}')
 
     # set lr,#epoch, optimizer and scheduler
-    lr=5e-4
+    lr=1e-3
     optimizer = optim.Adam(
         backbone.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 
-    num_epoch = 100000
+    num_epoch = 200000
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epoch, eta_min=5e-6)
-    mse_weight = [1,1,1]
+    mse_weight = [1,1/0.05,1/5]
+    # mse_weight = [1,1,1]
 
     # set tensorboard dir
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
@@ -90,8 +93,7 @@ def train():
             sample, target = sample.cuda(), target.cuda()
 
             output = backbone(sample)
-            #[8,333,1]
-            #[1,34,0.1]
+
             loss = weighted_mse(output, target,weights=torch.tensor(mse_weight).cuda())
             loss.backward()
             optimizer.step()
