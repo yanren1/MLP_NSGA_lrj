@@ -160,7 +160,6 @@ def is_valid(individual,plat,thre_list,thre_area):
 
 # 三个目 单位面积总能耗（min）、舒适时间占全年时间百分比（max）、单位面积增量成本（min）
 def evaluate(individual,sess,pred_thresh):
-
     bad_result =[9999, -9999, 9999]
 
     input_name = sess.get_inputs()[0].name
@@ -175,6 +174,8 @@ def evaluate(individual,sess,pred_thresh):
         return bad_result
     if pred[0][2] < pred_thresh[2]:
         return bad_result
+    if pred[0][2] > pred_thresh[3]:
+        return bad_result
 
     return pred[0][0],pred[0][1],pred[0][2]
 
@@ -183,17 +184,20 @@ def evaluate(individual,sess,pred_thresh):
 # 平面形式、建筑面积、建筑东西向房间数、建筑南北向房间数、建筑层数、建筑层高
 
 def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
-                                                muteProb=0.2,
+                                                muteProb = 0.2,
                                                 plat = 0,
                                                 thre_area = 20000,
+                                                thre_room_len_ew=-1,
+                                                thre_room_len_ns=-1,
                                                 thre_room_num_ew = 12,
                                                 thre_room_num_ns = 4,
                                                 thre_build_level_num = 6,
                                                 thre_build_level_height=4.2,
-                                                pred_thresh = [23,0.89,140]):
+                                                thre_win_ratios = [-1,-1,-1,-1],
+                                                pred_thresh = [23,0.89,140,300]):
     # 加载 ONNX
     sess = onnxruntime.InferenceSession(onnx_pth)
-
+    # print(pred_thresh)
     # random.seed(256)
     # 问题定义
     creator.create("FitnessMulti", base.Fitness, weights=(-1.0, 1.0, -1.0))
@@ -211,17 +215,36 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
                      [0, 0], [0, 0], [0, 0], [0, 0],
                      [0, 0],
                      [0, 0]]
+        # 房间长度约束
+        if thre_room_len_ew != -1:
+            thre_list[0][0] = thre_room_len_ew
+            thre_list[0][1] = thre_room_len_ew
+        if thre_room_len_ns != -1:
+            thre_list[1][0] = thre_room_len_ns
+            thre_list[1][1] = thre_room_len_ns
+        # 房间数量约束
         if thre_room_num_ew != -1:
             thre_list[2][0] = thre_room_num_ew
             thre_list[2][1] = thre_room_num_ew
-
+        # 建筑层数约束
         if thre_build_level_num != -1:
             thre_list[4][0] = thre_build_level_num
             thre_list[4][1] = thre_build_level_num
-
+        # 建筑层高约束
         if thre_build_level_height != -1:
             thre_list[5][0] = thre_build_level_height
             thre_list[5][1] = thre_build_level_height
+        # 最小窗比约束
+        for i in range(2):
+            if thre_win_ratios[i] !=-1:
+                if thre_win_ratios[i] < thre_list[9+i*4][0]:
+                    continue
+                if thre_win_ratios[i] > thre_list[9+i*4][1]:
+                    thre_list[9 + i * 4][0] = thre_list[9+i*4][1]
+                else:
+                    thre_list[9 + i * 4][0] = thre_win_ratios[i]
+
+
 
         lower_limits = [thre_list[i][0] for i in range(len(thre_list))]
         upper_limits = [thre_list[i][1] for i in range(len(thre_list))]
@@ -231,7 +254,7 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         pos_min_area = (thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * 2 + thre_list[0][0] * thre_list[2][
             0] * 2) * thre_list[4][0]
 
-        if  thre_area == -1:
+        if thre_area == -1:
             thre_area = pos_max_area
             print('Set as Default pos_max_area!')
 
@@ -269,22 +292,38 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
                      [0.2, 0.8], [1, 6], [2, 4.2], [0.2, 1.2],
                      [0.2, 0.9],
                      [1, 1]]
-
+        # 房间长度约束
+        if thre_room_len_ew != -1:
+            thre_list[0][0] = thre_room_len_ew
+            thre_list[0][1] = thre_room_len_ew
+        if thre_room_len_ns != -1:
+            thre_list[1][0] = thre_room_len_ns
+            thre_list[1][1] = thre_room_len_ns
+        # 房间数量约束
         if thre_room_num_ew != -1:
             thre_list[2][0] = thre_room_num_ew
             thre_list[2][1] = thre_room_num_ew
-
         if thre_room_num_ns != -1:
             thre_list[3][0] = thre_room_num_ns
             thre_list[3][1] = thre_room_num_ns
-
+        # 建筑层数约束
         if thre_build_level_num != -1:
             thre_list[4][0] = thre_build_level_num
             thre_list[4][1] = thre_build_level_num
-
+        # 建筑层高约束
         if thre_build_level_height != -1:
             thre_list[5][0] = thre_build_level_height
             thre_list[5][1] = thre_build_level_height
+        # 最小窗比约束
+        for i in range(4):
+            if thre_win_ratios[i] !=-1:
+                if thre_win_ratios[i] < thre_list[9+i*4][0]:
+                    continue
+                if thre_win_ratios[i] > thre_list[9+i*4][1]:
+                    thre_list[9 + i * 4][0] = thre_list[9+i*4][1]
+                else:
+                    thre_list[9 + i * 4][0] = thre_win_ratios[i]
+
 
         lower_limits = [thre_list[i][0] for i in range(len(thre_list))]
         upper_limits = [thre_list[i][1] for i in range(len(thre_list))]
@@ -296,7 +335,7 @@ def run_mlp_nsga(pop_size, NGEN, onnx_pth = 'final.onnx',cxProb = 0.8,
         pos_min_area = ((thre_list[0][0] * thre_list[1][0] * thre_list[2][0] * (thre_list[3][0] + 2)) * thre_list[4][0]) - (
                     (thre_list[0][0] * (thre_list[2][0] - 2) - 4) * (thre_list[1][0] * thre_list[3][0] - 4) * (thre_list[4][0] - 1))
 
-        if  thre_area == -1:
+        if thre_area == -1:
             thre_area = pos_max_area
             print('Set as Default pos_max_area!')
 
@@ -383,27 +422,34 @@ def write_result(pop,output_name):
 
 
 if __name__ == "__main__":
-
-    pop_size = 300   #初始种群数
-    NGEN = 200       #迭代次数
+    pop_size = 20   #初始种群数
+    NGEN = 20       #迭代次数
     cxProb = 0.8     #交叉概率
     muteProb = 0.2   #变异概率
-    plat = 1         # 0 -> 内廊 ，1 ->中庭
+    plat = 0         # 0 -> 内廊 ，1 ->中庭
     thre_area = -1               # 最大面积约束
-    thre_room_num_ew = 2           # 东西房间数约束
+    thre_room_len_ew = 3           # 东西房间长度约束
+    thre_room_len_ns = 4          # 南北房间长度约束
+    thre_room_num_ew = -1           # 东西房间数约束
     thre_room_num_ns = -1            # 南北房间数约束   （内廊可忽略强制为0）
     thre_build_level_num = -1        # 层数约束
     thre_build_level_height = -1   # 层高约束
-    pred_thresh = [23,0.89,140]    #最小能耗、最大百分比、最小成本
+    thre_win_ratios = [0.5,-1,0.5,0.6]     #最小窗比约束 SNEW
+    pred_thresh = [23,0.89,140,300]    #最小能耗、最大百分比、最小成本、最大成本
+
+
     final_pop,top1 = run_mlp_nsga(pop_size=pop_size,NGEN=NGEN,onnx_pth = 'final.onnx', cxProb = cxProb,
                                                                 muteProb=muteProb,
                                                                 plat = plat,
                                                                 thre_area = thre_area,
+                                                                thre_room_len_ew = thre_room_len_ew,
+                                                                thre_room_len_ns = thre_room_len_ns,
                                                                 thre_room_num_ew = thre_room_num_ew,
                                                                 thre_room_num_ns = thre_room_num_ns,
                                                                 thre_build_level_num = thre_build_level_num,
                                                                 thre_build_level_height=thre_build_level_height,
-                                                                pred_thresh = [23,0.89,140])
+                                                                thre_win_ratios = thre_win_ratios,
+                                                                pred_thresh = pred_thresh)
 
 
     write_result(final_pop,'final_pop')
