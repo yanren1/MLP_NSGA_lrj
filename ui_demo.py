@@ -1,9 +1,7 @@
-"""A demo script to showcase the Sun Valley ttk theme."""
-
 import tkinter
 from tkinter import ttk,filedialog
+import sv_ttk
 from deap_main import run_mlp_nsga,write_result
-# import sv_ttk
 from utils.onnx_inf import write_pred
 
 
@@ -243,7 +241,7 @@ class Main_UI(ttk.Frame):
 def main():
     root = tkinter.Tk()
     root.title("")
-    # sv_ttk.set_theme("light")
+    sv_ttk.set_theme("light")
     Main_UI(root).pack(expand=True, fill="both")
 
     root.mainloop()
