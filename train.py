@@ -27,7 +27,7 @@ def train():
     #seperate train and val set
 
     debug = True
-    use_pretrain = False
+    use_pretrain = True
 
     train_ratio = 0.8
     dataset = SampleDataset(root_dir = 'data')
@@ -63,12 +63,12 @@ def train():
             print(f'No {weights_pth}')
 
     # set lr,#epoch, optimizer and scheduler
-    lr=1e-3
+    lr=2e-4
     optimizer = optim.Adam(
         backbone.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 
-    num_epoch = 200000
+    num_epoch = 50000
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epoch, eta_min=5e-6)
     mse_weight = [1,1/0.05,1/5]
     # mse_weight = [1,1,1]
@@ -128,8 +128,7 @@ def train():
 
                     val_loss_list1.append(val_wmse.item())
                     val_loss_list2.append(val_MAPE.item())
-                    writer.add_scalar('Validation WMSE', np.mean(val_loss_list1), epoch + 1)
-                    writer.add_scalar('Validation MAPE', np.mean(val_loss_list2), epoch + 1)
+
 
             if debug:
                 # give some valing example, only for test
@@ -144,6 +143,10 @@ def train():
             Train_MAPE = np.mean(train_mape_list)
             val_wmse = np.mean(val_loss_list1)
             val_MAPE = np.mean(val_loss_list2)
+
+            writer.add_scalar('Validation WMSE', val_wmse, epoch + 1)
+            writer.add_scalar('Validation MAPE', val_MAPE, epoch + 1)
+
             print(f'VAL Epoch:{epoch} Train wmse = {Train_wmse}, '
                   f'Train MAPE = {Train_MAPE},'
                   f'val wmse = {val_wmse}, '
