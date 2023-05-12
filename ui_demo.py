@@ -1,6 +1,6 @@
 import tkinter
 from tkinter import ttk,filedialog
-import sv_ttk
+# import sv_ttk
 from deap_main import run_mlp_nsga,write_result
 from utils.onnx_inf import write_pred
 
@@ -48,13 +48,11 @@ class Pred_module(ttk.LabelFrame):
     def run_pred(self):
         self.title_run.config(text='计算中....')
         self.title_run.update_idletasks()
-        try:
-            write_pred(self.selected_file_path,'final.onnx','pred_result')
-            self.title_run.config(text='计算完成！ 结果输出至 pred_result.xlsx')
-            self.title_run.update_idletasks()
-        except:
-            self.title_run.config(text='计算出错，请检查命令行报错！')
-            self.title_run.update_idletasks()
+
+        write_pred(self.selected_file_path,self.selected_onnx_path,'pred_result')
+        self.title_run.config(text='计算完成！ 结果输出至 pred_result.xlsx')
+        self.title_run.update_idletasks()
+
 
 
 
@@ -240,7 +238,7 @@ class Main_UI(ttk.Frame):
 def main():
     root = tkinter.Tk()
     root.title("")
-    sv_ttk.set_theme("light")
+    # sv_ttk.set_theme("light")
     Main_UI(root).pack()
 
     root.mainloop()
