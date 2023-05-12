@@ -12,7 +12,7 @@ class Pred_module(ttk.LabelFrame):
         super().__init__(parent, text="预测模块", padding=15)
         self.add_widgets()
         self.selected_data_path = ''
-        self.selected_onnx_path = ''
+        self.selected_onnx_path = 'final.onnx'
 
 
 
@@ -24,7 +24,7 @@ class Pred_module(ttk.LabelFrame):
 
         self.button_select_model = ttk.Button(self, text="选择onnx模型文件",command = self.select_model)
         self.button_select_model.grid(row=1, column=0, padx=5, pady=10, sticky="ew")
-        self.title_modelname = ttk.Label(self, text='')
+        self.title_modelname = ttk.Label(self, text=' 默认同级目录 final.onnx ')
         self.title_modelname.grid(row=1, column=1, padx=5, pady=10, sticky="ew")
 
         self.button1 = ttk.Button(self, text="输出预测文件!", command= self.run_pred)
@@ -60,7 +60,7 @@ class NSGA_module(ttk.LabelFrame):
     def __init__(self, parent):
         super().__init__(parent, style="Card.TFrame",text= '寻优模块', padding=15)
         self.plat = tkinter.StringVar()  # 0 -> 内廊 ，1 ->中庭
-
+        self.selected_onnx_path = 'final.onnx'
         self.columnconfigure(0, weight=1)
         self.add_widgets()
 
@@ -186,11 +186,22 @@ class NSGA_module(ttk.LabelFrame):
         self.box_max_chengben.insert(0, "300")
         self.box_max_chengben.grid(row=10, column=3, padx=5, pady=10, sticky="ew")
         ###############################################################################
+        self.button_select_model = ttk.Button(self, text="选择onnx模型文件",command = self.select_model)
+        self.button_select_model.grid(row=11, column=0, padx=5, pady=10, sticky="ew")
+        self.title_modelname = ttk.Label(self, text=' 默认同级目录 final.onnx ')
+        self.title_modelname.grid(row=11, column=1, padx=5, pady=10, sticky="ew")
+
         self.nsga_button = ttk.Button(self, text="开始寻优!",command=self.run_nsga)
-        self.nsga_button.grid(row=11, column=1, padx=5, pady=10, sticky="ew")
+        self.nsga_button.grid(row=12, column=0, padx=5, pady=10, sticky="ew")
 
         self.title_run = ttk.Label(self, text='')
-        self.title_run.grid(row=12, column=0, padx=5, pady=10, sticky="ew")
+        self.title_run.grid(row=13, column=0, padx=5, pady=10, sticky="ew")
+
+    def select_model(self):
+        # 单个文件选择
+        self.selected_onnx_path = filedialog.askopenfilename()
+        self.title_modelname.config(text=self.selected_onnx_path)
+        self.title_modelname.update_idletasks()
 
     def run_nsga(self):
 
