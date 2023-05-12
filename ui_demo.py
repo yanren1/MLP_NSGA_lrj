@@ -48,11 +48,13 @@ class Pred_module(ttk.LabelFrame):
     def run_pred(self):
         self.title_run.config(text='计算中....')
         self.title_run.update_idletasks()
-
-        write_pred(self.selected_file_path,self.selected_onnx_path,'pred_result')
-        self.title_run.config(text='计算完成！ 结果输出至 pred_result.xlsx')
-        self.title_run.update_idletasks()
-
+        try:
+            write_pred(self.selected_file_path,self.selected_onnx_path,'pred_result')
+            self.title_run.config(text='计算完成！ 结果输出至 pred_result.xlsx')
+            self.title_run.update_idletasks()
+        except:
+            self.title_run.config(text='未知错误')
+            self.title_run.update_idletasks()
 
 
 
@@ -208,31 +210,31 @@ class NSGA_module(ttk.LabelFrame):
         self.title_run.config(text='正在执行...')
         self.title_run.update_idletasks()
 
-        # try:
-        final_pop, top1 = run_mlp_nsga(pop_size=int(self.box_pop_size.get()),
-                                       NGEN=int(self.box_NGEN.get()),
-                                       onnx_pth='final.onnx',
-                                       cxProb=float(self.box_cxProb.get()),
-                                       muteProb=float(self.box_muteProb.get()),
-                                       plat=int(self.plat.get()),
-                                       thre_area=int(self.box_thre_area.get()),
-                                       thre_room_len_ew=float(self.box_thre_room_len_ew.get()),
-                                       thre_room_len_ns=float(self.box_thre_room_len_ns.get()),
-                                       thre_room_num_ew=int(self.box_thre_room_num_ew.get()),
-                                       thre_room_num_ns=int(self.box_thre_room_num_ns.get()),
-                                       thre_build_level_num=int(self.box_thre_build_level_num.get()),
-                                       thre_build_level_height=float(self.box_thre_build_level_height.get()),
-                                       thre_win_ratios=[float(self.box_thre_win_ratios_s.get()), float(self.box_thre_win_ratios_n.get()),
-                                                        float(self.box_thre_win_ratios_e.get()),float(self.box_thre_win_ratios_w.get()),],
-                                       pred_thresh=[int(self.box_nenghao.get()),float(self.box_shushi.get()),
-                                                    int(self.box_min_chengben.get()),int(self.box_max_chengben.get()),])
+        try:
+            final_pop, top1 = run_mlp_nsga(pop_size=int(self.box_pop_size.get()),
+                                           NGEN=int(self.box_NGEN.get()),
+                                           onnx_pth=self.selected_onnx_path,
+                                           cxProb=float(self.box_cxProb.get()),
+                                           muteProb=float(self.box_muteProb.get()),
+                                           plat=int(self.plat.get()),
+                                           thre_area=int(self.box_thre_area.get()),
+                                           thre_room_len_ew=float(self.box_thre_room_len_ew.get()),
+                                           thre_room_len_ns=float(self.box_thre_room_len_ns.get()),
+                                           thre_room_num_ew=int(self.box_thre_room_num_ew.get()),
+                                           thre_room_num_ns=int(self.box_thre_room_num_ns.get()),
+                                           thre_build_level_num=int(self.box_thre_build_level_num.get()),
+                                           thre_build_level_height=float(self.box_thre_build_level_height.get()),
+                                           thre_win_ratios=[float(self.box_thre_win_ratios_s.get()), float(self.box_thre_win_ratios_n.get()),
+                                                            float(self.box_thre_win_ratios_e.get()),float(self.box_thre_win_ratios_w.get()),],
+                                           pred_thresh=[int(self.box_nenghao.get()),float(self.box_shushi.get()),
+                                                        int(self.box_min_chengben.get()),int(self.box_max_chengben.get()),])
 
-        write_result(final_pop, 'final_pop')
-        self.title_run.config(text='执行完毕! 结果已输出至 final_pop.xlsx ')
-        self.title_run.update_idletasks()
-        # except:
-        #     self.title_run.config(text='执行错误，请检查变量')
-        #     self.title_run.update_idletasks()
+            write_result(final_pop, 'final_pop')
+            self.title_run.config(text='执行完毕! 结果已输出至 final_pop.xlsx ')
+            self.title_run.update_idletasks()
+        except:
+            self.title_run.config(text='执行错误，请检查变量')
+            self.title_run.update_idletasks()
 
 class Main_UI(ttk.Frame):
     def __init__(self, parent):
