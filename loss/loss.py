@@ -10,4 +10,4 @@ def weighted_mse(y_pred, y_true, weights):
 
 
 def MAPE(y_true, y_pred):
-    return torch.mean(torch.abs((y_true - y_pred) / y_true)) * 100
+    return torch.mean(torch.abs((y_true - y_pred) / y_true+1e-6)) * 100

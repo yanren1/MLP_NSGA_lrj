@@ -26,14 +26,14 @@ def save_model(model_save_pth,model, epoch,train_wmse,train_mape,val_wmse,val_ma
 def train():
     #seperate train and val set
 
-    debug = True
-    use_pretrain = True
+    debug = False
+    use_pretrain = False
 
     train_ratio = 0.8
     dataset = SampleDataset(root_dir = 'data')
     train_size = int(train_ratio * len(dataset))
     val_size = len(dataset) - train_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size],generator=torch.Generator().manual_seed(80))
 
     # train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
     train_loader = torch.utils.data.DataLoader(
@@ -48,12 +48,13 @@ def train():
 
 
     # main model
-    backbone = torchvision.ops.MLP(in_channels=27,
-                                # hidden_channels=[28, 32, 64, 128, 256, 128, 64, 32, 16, 8, 3],
-                                hidden_channels=[28, 64, 256, 64, 8, 3],
-
-                                # norm_layer=nn.LayerNorm,
-                                dropout= 0,inplace=False).cuda()
+    backbone = nn.Sequential(torchvision.ops.MLP(in_channels=27,
+                                hidden_channels=[ 64, 128, 256,],
+                                dropout= 0.1,inplace=False),
+                             torchvision.ops.MLP(in_channels=256,
+                                                 hidden_channels=[3],
+                                                 dropout=0, inplace=False),
+                             ).cuda()
     # try read pre-train model
     if use_pretrain:
         weights_pth = 'final.pt'
@@ -63,13 +64,13 @@ def train():
             print(f'No {weights_pth}')
 
     # set lr,#epoch, optimizer and scheduler
-    lr=2e-4
+    lr=1e-3
     optimizer = optim.Adam(
         backbone.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 
     num_epoch = 50000
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epoch, eta_min=5e-6)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epoch, eta_min=1e-4)
     mse_weight = [1,1/0.05,1/5]
     # mse_weight = [1,1,1]
 
@@ -113,7 +114,7 @@ def train():
             writer.add_scalar('Learning rate', optimizer.param_groups[0]["lr"], epoch)
 
         # valing and save
-        if epoch % 1000==0:
+        if epoch % 500==0:
             print('Valing.....')
             val_loss_list1 = []
             val_loss_list2 = []
